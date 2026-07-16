@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Gesture Control Dashboard Center</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;600&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-dark: #07070a;
+            --card-bg: rgba(13, 13, 20, 0.7);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --neon-yellow: #ffdf00;
+            --text-main: #f0f0f5;
+            --text-muted: #8c8c9e;
+            --font-outfit: 'Outfit', sans-serif;
+            --font-space: 'Space Grotesk', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-outfit);
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(at 10% 20%, rgba(0, 243, 255, 0.07) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(255, 0, 127, 0.07) 0px, transparent 50%);
+        }
+
+        /* App Container */
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+            display: flex;
+            flex-grow: 1;
+            flex-direction: column;
+            gap: 24px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 28px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .brand-section h1 {
+            font-family: var(--font-space);
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, var(--neon-cyan), #a100ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+        }
+
+        .brand-section p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .controls-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 30px;
+            font-family: var(--font-space);
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            box-shadow: 0 0 8px var(--text-muted);
+        }
+
+        .status-badge.running .status-indicator {
+            background-color: var(--neon-green);
+            box-shadow: 0 0 12px var(--neon-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-badge.paused .status-indicator {
+            background-color: var(--neon-yellow);
+            box-shadow: 0 0 12px var(--neon-yellow);
+        }
+
+        /* Switch Toggle Button */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--card-border);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-main);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: rgba(57, 255, 20, 0.2);
+            border-color: var(--neon-green);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(30px);
+            background-color: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+
+        /* Layout Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr 400px;
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        /* Panel Card Base */
+        .panel-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            font-family: var(--font-space);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
+        }
+
+        .panel-title svg {
+            color: var(--neon-cyan);
+            stroke: currentColor;
+            fill: none;
+        }
+
+        /* Settings Column styling */
+        .settings-group {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            overflow-y: auto;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .setting-value {
+            color: var(--neon-cyan);
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+
+        .setting-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .setting-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .setting-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Center Panel layout */
+        .center-panel {
+            display: grid;
+            grid-template-rows: 1fr 220px;
+            gap: 24px;
+        }
+
+        /* Visualizer Widget */
+        .visualizer-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(5, 5, 8, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            min-height: 350px;
+            overflow: hidden;
+        }
+
+        .visualizer-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .visualizer-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            pointer-events: none;
+        }
+
+        .visualizer-badge {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--neon-cyan);
+        }
+
+        /* Scrolling Terminal Logs */
+        .terminal-card {
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-space);
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 6px;
+        }
+
+        .terminal-logs {
+            flex-grow: 1;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-entry {
+            opacity: 0.85;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .log-entry .timestamp {
+            color: #55556b;
+            margin-right: 8px;
+        }
+
+        .log-entry .action {
+            color: var(--neon-yellow);
+        }
+
+        .log-entry.action-success .action {
+            color: var(--neon-green);
+            text-shadow: 0 0 6px rgba(57, 255, 20, 0.3);
+        }
+
+        .log-entry.action-error .action {
+            color: var(--neon-pink);
+        }
+
+        /* Right Panel: Guide and checklist */
+        .checklist-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        .checklist-item.completed {
+            background: rgba(57, 255, 20, 0.03);
+            border-color: rgba(57, 255, 20, 0.15);
+        }
+
+        .checklist-item.active {
+            background: rgba(0, 243, 255, 0.03);
+            border-color: rgba(0, 243, 255, 0.25);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.05);
+            animation: pulseActive 2s infinite alternate;
+        }
+
+        .checkbox-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .checklist-item.completed .checkbox-dot {
+            border-color: var(--neon-green);
+            background-color: var(--neon-green);
+            box-shadow: 0 0 6px var(--neon-green);
+        }
+
+        .checklist-item.active .checkbox-dot {
+            border-color: var(--neon-cyan);
+        }
+
+        .checklist-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .checklist-item.completed .checklist-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .checklist-item.active .checklist-text {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes pulseActive {
+            0% {
+                transform: scale(1);
+                border-color: rgba(0, 243, 255, 0.15);
+            }
+
+            100% {
+                transform: scale(1.01);
+                border-color: rgba(0, 243, 255, 0.35);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 0.85;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="brand-section">
+                <h1>ANTIGRAVITY</h1>
+                <p>AI-Powered Hand Gesture Control Dashboard Center</p>
+            </div>
+            <div class="controls-section">
+                <div id="statusBadge" class="status-badge running">
+                    <div class="status-indicator"></div>
+                    <span id="statusText">RUNNING</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="trackingToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </header>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+
+            <!-- Left Column: Settings -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                    Sensitivity & Calibration
+                </div>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <span>Pinch Threshold</span>
+                            <span id="valPinch" class="setting-value">0.22</span>
+                        </div>
+                        <input type="range" id="sliderPinch" class="setting-slider" min="0.10" max="0.40" step="0.01"
+                            value="0.22">
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <span>Min Smoothing Speed (Click)</span>
+                            <span id="valSmoothMin" class="setting-value">0.08</span>
+                        </div>
+                        <input type="range" id="sliderSmoothMin" class="setting-slider" min="0.01" max="0.30"
+                            step="0.01" value="0.08">
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <span>Max Smoothing Speed (Move)</span>
+                            <span id="valSmoothMax" class="setting-value">0.70</span>
+                        </div>
+                        <input type="range" id="sliderSmoothMax" class="setting-slider" min="0.40" max="0.95"
+                            step="0.01" value="0.70">
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <span>Active Zone Margin (X)</span>
+                            <span id="valMarginX" class="setting-value">0.15</span>
+                        </div>
+                        <input type="range" id="sliderMarginX" class="setting-slider" min="0.00" max="0.40" step="0.01"
+                            value="0.15">
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <span>Active Zone Margin (Y)</span>
+                            <span id="valMarginY" class="setting-value">0.20</span>
+                        </div>
+                        <input type="range" id="sliderMarginY" class="setting-slider" min="0.00" max="0.40" step="0.01"
+                            value="0.20">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column: Visualizer & Logs -->
+            <div class="center-panel">
+                <!-- Live Video Feed Visualizer -->
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                            </path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        Live Tracking Feed
+                    </div>
+                    <div class="visualizer-container">
+                        <!-- Live MJPEG Stream directly from the Python backend server -->
+                        <img src="/video_feed" id="videoFeed" alt="Webcam Tracking Feed" />
+                        <div class="visualizer-overlay">
+                            <span id="visualizerFPS" class="visualizer-badge">FPS: --</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrolling Logs -->
+                <div class="terminal-card">
+                    <div class="terminal-header">
+                        <span>SYSTEM CONSOLE LOGS</span>
+                        <span id="logCount">0 entries</span>
+                    </div>
+                    <div id="terminalLogs" class="terminal-logs">
+                        <div class="log-entry"><span class="timestamp">[00:00:00]</span> <span class="action">SYSTEM
+                                INITIALIZED</span>. Waiting for connection...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive Onboarding checklist -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Interactive Guide
+                </div>
+                <div class="checklist-container" id="checklistContainer">
+                    <div class="checklist-item active" data-step="0">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Move Index Finger to Center Target</span>
+                    </div>
+                    <div class="checklist-item" data-step="1">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Pinch Index + Thumb (Left Click)</span>
+                    </div>
+                    <div class="checklist-item" data-step="2">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Double Pinch Index + Thumb (Double Click)</span>
+                    </div>
+                    <div class="checklist-item" data-step="3">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Pinch Middle + Thumb (Right Click)</span>
+                    </div>
+                    <div class="checklist-item" data-step="4">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Raise Index + Middle (Scroll Mode)</span>
+                    </div>
+                    <div class="checklist-item" data-step="5">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Raise Thumb + Pinky (Volume Mode)</span>
+                    </div>
+                    <div class="checklist-item" data-step="6">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Pinch Ring + Thumb (Copy Action)</span>
+                    </div>
+                    <div class="checklist-item" data-step="7">
+                        <div class="checkbox-dot"></div>
+                        <span class="checklist-text">Pinch Pinky + Thumb (Paste Action)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script imports -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const trackingToggle = document.getElementById('trackingToggle');
+        const fpsBadge = document.getElementById('visualizerFPS');
+        const terminalLogs = document.getElementById('terminalLogs');
+        const logCount = document.getElementById('logCount');
+
+        // Sliders and Values
+        const sliderPinch = document.getElementById('sliderPinch');
+        const valPinch = document.getElementById('valPinch');
+        const sliderSmoothMin = document.getElementById('sliderSmoothMin');
+        const valSmoothMin = document.getElementById('valSmoothMin');
+        const sliderSmoothMax = document.getElementById('sliderSmoothMax');
+        const valSmoothMax = document.getElementById('valSmoothMax');
+        const sliderMarginX = document.getElementById('sliderMarginX');
+        const valMarginX = document.getElementById('valMarginX');
+        const sliderMarginY = document.getElementById('sliderMarginY');
+        const valMarginY = document.getElementById('valMarginY');
+
+        // Checklist Container
+        const checklistContainer = document.getElementById('checklistContainer');
+
+        let activeOnboardingStep = 0;
+        let totalLogEntries = 1;
+
+        // Socket connection events
+        socket.on('connect', () => {
+            addConsoleLog("Connected to local Python server.", "success");
+        });
+
+        socket.on('disconnect', () => {
+            addConsoleLog("Disconnected from Python server.", "error");
+            statusBadge.className = "status-badge paused";
+            statusText.innerText = "DISCONNECTED";
+        });
+
+        // Update settings and logs
+        socket.on('status_update', (data) => {
+            // Update badge status
+            if (data.is_paused) {
+                statusBadge.className = "status-badge paused";
+                statusText.innerText = "PAUSED";
+                trackingToggle.checked = false;
+            } else {
+                statusBadge.className = "status-badge running";
+                statusText.innerText = "RUNNING";
+                trackingToggle.checked = true;
+            }
+
+            // Update onboarding checklist UI
+            if (data.tutorial_step !== undefined && data.tutorial_step !== activeOnboardingStep) {
+                activeOnboardingStep = data.tutorial_step;
+                updateChecklist(activeOnboardingStep, data.tutorial_active);
+            }
+
+            // Add log actions if they occurred
+            if (data.actions && data.actions.length > 0) {
+                data.actions.forEach(action => {
+                    addConsoleLog(`ACTION TRIGGERED: ${action}`, "success");
+                });
+            }
+
+            // Update FPS
+            if (data.fps !== undefined) {
+                fpsBadge.innerText = `FPS: ${data.fps}`;
+            }
+        });
+
+        // Switch Toggle handler
+        trackingToggle.addEventListener('change', () => {
+            socket.emit('toggle_pause');
+        });
+
+        // Settings Slider Change Emit handlers
+        function setupSlider(slider, valDisplay, eventName) {
+            slider.addEventListener('input', () => {
+                valDisplay.innerText = slider.value;
+                socket.emit('setting_change', {
+                    setting: eventName,
+                    value: parseFloat(slider.value)
+                });
+            });
+        }
+
+        setupSlider(sliderPinch, valPinch, 'pinch_threshold');
+        setupSlider(sliderSmoothMin, valSmoothMin, 'smoothing_min');
+        setupSlider(sliderSmoothMax, valSmoothMax, 'smoothing_max');
+        setupSlider(sliderMarginX, valMarginX, 'margin_x');
+        setupSlider(sliderMarginY, valMarginY, 'margin_y');
+
+        // Update Checklist items dynamically
+        function updateChecklist(currentStep, isTutorialActive) {
+            const items = checklistContainer.getElementsByClassName('checklist-item');
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const stepNum = parseInt(item.getAttribute('data-step'));
+
+                if (!isTutorialActive) {
+                    item.className = "checklist-item completed";
+                } else if (stepNum < currentStep) {
+                    item.className = "checklist-item completed";
+                } else if (stepNum === currentStep) {
+                    item.className = "checklist-item active";
+                } else {
+                    item.className = "checklist-item";
+                }
+            }
+        }
+
+        // Add logs to console
+        function addConsoleLog(actionText, type = "info") {
+            const timestampStr = new Date().toTimeString().split(' ')[0];
+            const logElement = document.createElement('div');
+            logElement.className = `log-entry ${type === 'success' ? 'action-success' : type === 'error' ? 'action-error' : ''}`;
+            logElement.innerHTML = `<span class="timestamp">[${timestampStr}]</span> <span class="action">${actionText}</span>`;
+
+            terminalLogs.appendChild(logElement);
+            terminalLogs.scrollTop = terminalLogs.scrollHeight; // Auto-scroll to bottom
+
+            totalLogEntries++;
+            logCount.innerText = `${totalLogEntries} entries`;
+
+            // Limit to last 50 logs to prevent memory overflow
+            while (terminalLogs.children.length > 50) {
+                terminalLogs.removeChild(terminalLogs.firstChild);
+            }
+        }
+
+        // Global key press listener to skip tutorial using 's' in the browser window
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 's' || e.key === 'S') {
+                socket.emit('skip_tutorial');
+            }
+        });
+    </script>
+</body>
+
+</html>

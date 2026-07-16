@@ -1,0 +1,28 @@
+{
+    "pinch_threshold": 0.22,
+    "smoothing_min": 0.08,
+    "smoothing_max": 0.7,
+    "margin_x": 0.15,
+    "margin_y": 0.2,
+    "trackpad_mode": false,
+    "hotkeys": {
+        "minimize": [
+            "win",
+            "down"
+        ],
+        "maximize": [
+            "win",
+            "up"
+        ],
+        "copy": [
+            "ctrl",
+            "c"
+        ],
+        "paste": [
+            "ctrl",
+            "v"
+        ]
+    },
+    "open_hand_ratio": 0.78,
+    "fist_ratio": 0.54
+}
